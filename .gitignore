@@ -1,0 +1,12 @@
+*.class
+*.log
+dist/*
+target/
+lib_managed/
+src_managed/
+.scala_dependencies
+.idea*
+.sublime
+*.sublime-*
+.DS_Store
+/.history

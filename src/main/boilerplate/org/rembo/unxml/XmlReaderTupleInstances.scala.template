@@ -1,0 +1,22 @@
+package org.rembo.unxml
+
+trait XmlReaderTupleInstances {
+
+  [1..21#
+  implicit class XmlReadOps1[[#L1#]](val left: XmlRead[([#L1#])]) {
+    def and[R](right: XmlRead[R]): XmlRead[Tuple2[[#L1#], R]] = XmlRead { node =>
+      val ([#l1#]) = left.read(node)
+      ([#l1#], right.read(node))
+    }
+  }#
+  ]
+
+  [#
+  implicit class XmlReadApply1[[#L1#]](val r: XmlRead[([#L1#])]) {
+    def apply[R](create: ([#L1#]) => R): XmlRead[R] = XmlRead { node =>
+      val ([#l1#]) = r.read(node)
+      create([#l1#])
+    }
+  }#
+  ]
+}
