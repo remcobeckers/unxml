@@ -4,14 +4,14 @@ import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 lazy val projectSettings = Seq(
   organization := "org.rembo",
   scalaVersion := "2.11.4",
-  version := "0.1",
+  version := "0.0.2",
   name := "unxml",
   licenses += ("Apache-2.0", url("http://opensource.org/licenses/apache2.0"))
 )
 
 lazy val scalaSettings = Seq(
   scalacOptions := Seq("-encoding", "utf8",
-    "-target:jvm-1.8",
+    "-target:jvm-1.7",
     "-feature",
     "-language:implicitConversions",
     "-language:postfixOps",
