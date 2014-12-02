@@ -1,5 +1,6 @@
 package org.rembo.unxml
 
+import annotation._
 import scala.util.control.NonFatal
 import scala.xml.NodeSeq
 
@@ -39,6 +40,7 @@ trait XmlPath {
   def \(elem: String): XmlPath = XmlPath(apply(_) \ elem)
   def \\(elem: String): XmlPath = XmlPath(apply(_) \\ elem)
 
+  @implicitNotFound("An implicit XmlRead for ${X1} is required.")
   def read[T](implicit r: XmlRead[T]): XmlRead[T] = XmlRead { node ⇒
     val n = apply(node)
     if (n.isEmpty) deserializationError("Node not found.")
@@ -49,6 +51,7 @@ trait XmlPath {
     }
   }
 
+  @implicitNotFound("An implicit XmlRead for ${X1} is required.")
   def readOptional[T](implicit r: XmlRead[T]): XmlRead[Option[T]] = XmlRead { node ⇒
     val n = apply(node)
     if (n.isEmpty) None
