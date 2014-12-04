@@ -4,9 +4,10 @@ import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 lazy val projectSettings = Seq(
   organization := "org.rembo",
   scalaVersion := "2.11.4",
-  version := "0.0.2",
+  version := "0.0.3",
   name := "unxml",
-  licenses += ("Apache-2.0", url("http://opensource.org/licenses/apache2.0"))
+  licenses += ("Apache-2.0", url("http://opensource.org/licenses/apache2.0")),
+  isSnapshot := true
 )
 
 lazy val scalaSettings = Seq(

@@ -4,63 +4,85 @@ import annotation._
 import scala.util.control.NonFatal
 import scala.xml.NodeSeq
 
-object XmlErrors {
-  class DeserializationException(msg: String, cause: Throwable = null) extends RuntimeException(msg, cause)
-
-  def deserializationError(msg: String, cause: Throwable = null) = throw new DeserializationException(msg, cause)
-}
-
-import XmlErrors._
-
 object XmlRead {
-  def apply[T](f: NodeSeq ⇒ T) = new XmlRead[T]() {
+  def apply[T](f: NodeSeq ⇒ XmlResult[T]) = new XmlRead[T]() {
     def read(nodeSeq: NodeSeq) = f(nodeSeq)
   }
 }
 
+@implicitNotFound(msg = "An implicit XmlRead for ${T} is required.")
 trait XmlRead[T] {
-  def read(nodeSeq: NodeSeq): T
+  def read(nodeSeq: NodeSeq): XmlResult[T]
 
-  def map[R](f: T ⇒ R): XmlRead[R] = XmlRead(node ⇒ f(read(node)))
-  def flatMap[R](f: T ⇒ XmlRead[R]): XmlRead[R] = XmlRead(node ⇒ f(read(node)).read(node))
+  def map[R](f: T ⇒ R): XmlRead[R] = XmlRead { node ⇒ read(node).map(v ⇒ f(v)) }
+  def flatMap[R](f: T ⇒ XmlRead[R]): XmlRead[R] = XmlRead { node ⇒ read(node).flatMap(t ⇒ f(t).read(node)) }
 }
 
 object XmlPath {
-  def \(elem: String): XmlPath = XmlPath(_ \ elem)
-  def \\(elem: String): XmlPath = XmlPath(_ \\ elem)
-
-  def apply(f: NodeSeq ⇒ NodeSeq) = new XmlPath {
-    override def apply(nodeSeq: NodeSeq) = f(nodeSeq)
-  }
+  def \(elem: String): XmlPath = XmlPath(List(elem))
+  def apply(): XmlPath = XmlPath(List.empty)
 }
 
-trait XmlPath {
-  def apply(nodeSeq: NodeSeq): NodeSeq
+case class XmlPath(path: List[String]) {
+  def \(elem: String): XmlPath = XmlPath(path :+ elem)
 
-  def \(elem: String): XmlPath = XmlPath(apply(_) \ elem)
-  def \\(elem: String): XmlPath = XmlPath(apply(_) \\ elem)
+  def apply(node: NodeSeq): NodeSeq = path.foldLeft(node) { (nodeSeq, elem) ⇒ nodeSeq \ elem }
 
-  @implicitNotFound("An implicit XmlRead for ${X1} is required.")
   def read[T](implicit r: XmlRead[T]): XmlRead[T] = XmlRead { node ⇒
     val n = apply(node)
-    if (n.isEmpty) deserializationError("Node not found.")
-    try {
-      r.read(n)
-    } catch {
-      case NonFatal(t) ⇒ deserializationError("Error while parsing ", t)
-    }
+    if (n.isEmpty) XmlError("Node not found", this)
+    r.read(n)
   }
 
-  @implicitNotFound("An implicit XmlRead for ${X1} is required.")
   def readOptional[T](implicit r: XmlRead[T]): XmlRead[Option[T]] = XmlRead { node ⇒
     val n = apply(node)
-    if (n.isEmpty) None
-    else Some {
-      try {
-        r.read(n)
-      } catch {
-        case NonFatal(t) ⇒ deserializationError("Error while parsing ", t)
-      }
+    if (n.isEmpty) XmlSuccess(None)
+    else r.read(n).map(Some(_))
+  }
+
+  def ++(other: XmlPath) = {
+    XmlPath(path ::: other.path)
+  }
+
+  override def toString: String = path.mkString("\\")
+}
+
+object XmlResult {
+  def apply[T](valueProducer: ⇒ T) = {
+    try {
+      XmlSuccess(valueProducer)
+    } catch {
+      case NonFatal(t) ⇒ XmlError(s"Error while parsing ${t.getMessage}")
     }
   }
 }
+
+sealed trait XmlResult[+T] {
+  def map[R](f: T ⇒ R): XmlResult[R] = this match {
+    case XmlSuccess(v) ⇒ XmlSuccess(f(v))
+    case e: XmlError   ⇒ e
+  }
+
+  def flatMap[R](f: T ⇒ XmlResult[R]): XmlResult[R] = this match {
+    case XmlSuccess(v) ⇒ f(v)
+    case e: XmlError   ⇒ e
+  }
+
+  def addErrorPathPrefix(path: XmlPath) = this match {
+    case XmlError(e, errorPath) ⇒ XmlError(e, errorPath = path ++ errorPath)
+    case s: XmlSuccess[T]       ⇒ s
+  }
+
+  def orElse[TT >: T](f: ⇒ XmlResult[TT]) = this match {
+    case XmlError(_, _)        ⇒ f
+    case other @ XmlSuccess(_) ⇒ other
+  }
+
+  def getOrElse[TT >: T](otherwise: ⇒ TT) = this match {
+    case XmlError(_, _) ⇒ otherwise
+    case XmlSuccess(v)  ⇒ v
+  }
+}
+
+case class XmlSuccess[T](value: T) extends XmlResult[T]
+case class XmlError(error: String, errorPath: XmlPath = XmlPath(List.empty)) extends XmlResult[Nothing]
