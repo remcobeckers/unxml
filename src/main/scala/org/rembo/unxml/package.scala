@@ -19,6 +19,8 @@ trait XmlRead[T] {
 }
 
 object XmlPath {
+  val empty = XmlPath(List.empty)
+
   def \(elem: String): XmlPath = XmlPath(List(elem))
   def apply(): XmlPath = XmlPath(List.empty)
 }
@@ -27,6 +29,10 @@ case class XmlPath(path: List[String]) {
   def \(elem: String): XmlPath = XmlPath(path :+ elem)
 
   def apply(node: NodeSeq): NodeSeq = path.foldLeft(node) { (nodeSeq, elem) ⇒ nodeSeq \ elem }
+
+  def init = XmlPath(path.init)
+
+  def startsWith(other: XmlPath) = path.startsWith(other.path)
 
   def read[T](implicit r: XmlRead[T]): XmlRead[T] = XmlRead { node ⇒
     val n = apply(node)
