@@ -4,18 +4,18 @@ import annotation._
 import scala.util.control.NonFatal
 import scala.xml.NodeSeq
 
-object XmlRead {
-  def apply[T](f: NodeSeq ⇒ XmlResult[T]) = new XmlRead[T]() {
-    def read(nodeSeq: NodeSeq) = f(nodeSeq)
+object XmlReads {
+  def apply[T](f: NodeSeq ⇒ XmlResult[T]) = new XmlReads[T]() {
+    def reads(nodeSeq: NodeSeq) = f(nodeSeq)
   }
 }
 
 @implicitNotFound(msg = "An implicit XmlRead for ${T} is required.")
-trait XmlRead[T] {
-  def read(nodeSeq: NodeSeq): XmlResult[T]
+trait XmlReads[T] {
+  def reads(nodeSeq: NodeSeq): XmlResult[T]
 
-  def map[R](f: T ⇒ R): XmlRead[R] = XmlRead { node ⇒ read(node).map(v ⇒ f(v)) }
-  def flatMap[R](f: T ⇒ XmlRead[R]): XmlRead[R] = XmlRead { node ⇒ read(node).flatMap(t ⇒ f(t).read(node)) }
+  def map[R](f: T ⇒ R): XmlReads[R] = XmlReads { node ⇒ reads(node).map(v ⇒ f(v)) }
+  def flatMap[R](f: T ⇒ XmlReads[R]): XmlReads[R] = XmlReads { node ⇒ reads(node).flatMap(t ⇒ f(t).reads(node)) }
 }
 
 object XmlPath {
@@ -34,16 +34,16 @@ case class XmlPath(path: List[String]) {
 
   def startsWith(other: XmlPath) = path.startsWith(other.path)
 
-  def read[T](implicit r: XmlRead[T]): XmlRead[T] = XmlRead { node ⇒
+  def read[T](implicit r: XmlReads[T]): XmlReads[T] = XmlReads { node ⇒
     val n = apply(node)
     if (n.isEmpty) XmlError("Node not found", this)
-    r.read(n)
+    r.reads(n)
   }
 
-  def readOptional[T](implicit r: XmlRead[T]): XmlRead[Option[T]] = XmlRead { node ⇒
+  def readOptional[T](implicit r: XmlReads[T]): XmlReads[Option[T]] = XmlReads { node ⇒
     val n = apply(node)
     if (n.isEmpty) XmlSuccess(None)
-    else r.read(n).map(Some(_))
+    else r.reads(n).map(Some(_))
   }
 
   def ++(other: XmlPath) = {

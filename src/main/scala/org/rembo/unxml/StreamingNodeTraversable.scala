@@ -1,6 +1,5 @@
 package org.rembo.unxml
 
-
 import io.Source
 import scala.xml._
 
@@ -21,21 +20,24 @@ object StreamingNodeTraversable {
   // Other option: Return value is a TraversableOnce[Any] and pattern match on output. Allows for
   // getting multiple sections as traversables but less convenient to work with.
 
-  def readManyFromSource[T: XmlRead](path: XmlPath)(input: Source): TraversableOnce[XmlResult[T]] = {
-    val reads = implicitly[XmlRead[T]]
-    generatorToTraversable(processSource(input, path :: Nil)).map(reads.read(_))
+  def readFromSource(targetPaths: List[XmlPath])(input: Source): Traversable[NodeSeq] =
+    generatorToTraversable(processSource(input, targetPaths))
+
+  def readManyFromSource[T: XmlReads](path: XmlPath)(input: Source): TraversableOnce[XmlResult[T]] = {
+    val reads = implicitly[XmlReads[T]]
+    generatorToTraversable(processSource(input, path :: Nil)).map(reads.reads(_))
   }
 
-  def readManyWithHeaderFromSource[H: XmlRead, T: XmlRead](headerPath: XmlPath, path: XmlPath)(input: Source): (XmlResult[H], TraversableOnce[XmlResult[T]]) = {
-    val headerReads = implicitly[XmlRead[H]]
-    val reads = implicitly[XmlRead[T]]
+  def readManyWithHeaderFromSource[H: XmlReads, T: XmlReads](headerPath: XmlPath, path: XmlPath)(input: Source): (XmlResult[H], TraversableOnce[XmlResult[T]]) = {
+    val headerReads = implicitly[XmlReads[H]]
+    val reads = implicitly[XmlReads[T]]
     val traversable = generatorToTraversable(processSource(input, headerPath :: path :: Nil))
 
-    val header = headerReads.read(traversable.head)
-    (header, traversable.map(reads.read(_)))
+    val header = headerReads.reads(traversable.head)
+    (header, traversable.map(reads.reads(_)))
   }
 
-  def processSource[T](input: Source, targetPaths: List[XmlPath])(f: NodeSeq => T) {
+  def processSource[T](input: Source, targetPaths: List[XmlPath])(f: NodeSeq ⇒ T) {
     val parser = new scala.xml.parsing.ConstructingParser(input, false) {
       var currentPath = XmlPath.empty
       var targets = targetPaths
@@ -46,7 +48,7 @@ object StreamingNodeTraversable {
         if (label != null) currentPath = currentPath \ label
       }
       override def elemEnd(pos: Int, pre: String, label: String) {
-        if (label!= null) currentPath = currentPath.init
+        if (label != null) currentPath = currentPath.init
         super.elemEnd(pos, pre, label)
       }
 
@@ -57,11 +59,11 @@ object StreamingNodeTraversable {
           f(node)
           if (targets.tail != Nil) targets = targets.tail
           NodeSeq.Empty
-//        } else if (targetPath.startsWith(currentPath)) {
-//          node
+          //        } else if (targetPath.startsWith(currentPath)) {
+          //          node
         } else {
           <dummy/> // All other nodes are not interesting
-//          node
+          //          node
         }
       }
     }
@@ -69,12 +71,11 @@ object StreamingNodeTraversable {
     parser.document // trigger parsing by requesting document
   }
 
-  private def generatorToTraversable[T](func: (T => Unit) => Unit) =
+  private def generatorToTraversable[T](func: (T ⇒ Unit) ⇒ Unit) =
     new Traversable[T] {
-      def foreach[X](f: T => X) {
+      def foreach[X](f: T ⇒ X) {
         func(f(_))
       }
     }
 }
-
 
