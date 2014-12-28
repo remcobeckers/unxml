@@ -23,20 +23,6 @@ object StreamingNodeTraversable {
   def readFromSource(targetPaths: List[XmlPath])(input: Source): Traversable[NodeSeq] =
     generatorToTraversable(processSource(input, targetPaths))
 
-  def readManyFromSource[T: XmlReads](path: XmlPath)(input: Source): TraversableOnce[XmlResult[T]] = {
-    val reads = implicitly[XmlReads[T]]
-    generatorToTraversable(processSource(input, path :: Nil)).map(reads.reads(_))
-  }
-
-  def readManyWithHeaderFromSource[H: XmlReads, T: XmlReads](headerPath: XmlPath, path: XmlPath)(input: Source): (XmlResult[H], TraversableOnce[XmlResult[T]]) = {
-    val headerReads = implicitly[XmlReads[H]]
-    val reads = implicitly[XmlReads[T]]
-    val traversable = generatorToTraversable(processSource(input, headerPath :: path :: Nil))
-
-    val header = headerReads.reads(traversable.head)
-    (header, traversable.map(reads.reads(_)))
-  }
-
   def processSource[T](input: Source, targetPaths: List[XmlPath])(f: NodeSeq ⇒ T) {
     val parser = new scala.xml.parsing.ConstructingParser(input, false) {
       var currentPath = XmlPath.empty
@@ -56,8 +42,8 @@ object StreamingNodeTraversable {
         pscope: NamespaceBinding, empty: Boolean, nodes: NodeSeq): NodeSeq = {
         val node = super.elem(pos, pre, label, attrs, pscope, empty, nodes)
         if (targets.head == currentPath) {
-          f(node)
           if (targets.tail != Nil) targets = targets.tail
+          f(node)
           NodeSeq.Empty
           //        } else if (targetPath.startsWith(currentPath)) {
           //          node

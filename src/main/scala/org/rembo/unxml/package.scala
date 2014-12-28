@@ -19,20 +19,17 @@ trait XmlReads[T] {
 }
 
 object XmlPath {
-  val empty = XmlPath(List.empty)
+  val empty = ElemPath(List.empty)
 
-  def \(elem: String): XmlPath = XmlPath(List(elem))
-  def apply(): XmlPath = XmlPath(List.empty)
+  def \(elem: String): ElemPath = ElemPath(List(elem))
+  def apply(): XmlPath = ElemPath(List.empty)
 }
 
-case class XmlPath(path: List[String]) {
-  def \(elem: String): XmlPath = XmlPath(path :+ elem)
-
-  def apply(node: NodeSeq): NodeSeq = path.foldLeft(node) { (nodeSeq, elem) ⇒ nodeSeq \ elem }
-
-  def init = XmlPath(path.init)
-
-  def startsWith(other: XmlPath) = path.startsWith(other.path)
+trait XmlPath {
+  def elems: List[String]
+  def apply(node: NodeSeq): NodeSeq
+  def init: ElemPath
+  def startsWith(other: XmlPath): Boolean
 
   def read[T](implicit r: XmlReads[T]): XmlReads[T] = XmlReads { node ⇒
     val n = apply(node)
@@ -45,12 +42,45 @@ case class XmlPath(path: List[String]) {
     if (n.isEmpty) XmlSuccess(None)
     else r.reads(n).map(Some(_))
   }
+}
 
-  def ++(other: XmlPath) = {
-    XmlPath(path ::: other.path)
+case class ElemPath(elems: List[String]) extends XmlPath {
+  def \(elem: String): ElemPath = ElemPath(elems :+ elem)
+
+  def `@`(attribute: String): AttrPath = AttrPath(elems, attribute)
+
+  def apply(node: NodeSeq): NodeSeq = elems.foldLeft(node) { (nodeSeq, elem) ⇒ nodeSeq \ elem }
+
+  def init = ElemPath(elems.init)
+
+  def startsWith(other: XmlPath) = other match {
+    case ElemPath(otherElems) ⇒ elems.startsWith(otherElems)
+    case AttrPath(_, _)       ⇒ false
   }
 
-  override def toString: String = path.mkString("\\")
+  def ++(other: XmlPath) = other match {
+    case ElemPath(otherElems)       ⇒ ElemPath(elems ::: otherElems)
+    case AttrPath(otherElems, attr) ⇒ AttrPath(elems ::: otherElems, attr)
+  }
+
+  override def toString: String = elems.mkString("\\")
+}
+
+case class AttrPath(elems: List[String], attr: String) extends XmlPath {
+  override def toString: String = elems.mkString("\\") + s"@$attr"
+
+  override def init: ElemPath = ElemPath(elems)
+
+  override def readOptional[T](implicit r: XmlReads[T]): XmlReads[Option[T]] = ???
+
+  override def read[T](implicit r: XmlReads[T]): XmlReads[T] = ???
+
+  def apply(node: NodeSeq): NodeSeq = elems.foldLeft(node) { (nodeSeq, elem) ⇒ nodeSeq \ elem } \ s"@$attr"
+
+  def startsWith(other: XmlPath) = other match {
+    case ElemPath(otherElems)            ⇒ elems.startsWith(otherElems)
+    case AttrPath(otherElems, otherAttr) ⇒ elems == otherElems && attr == otherAttr
+  }
 }
 
 object XmlResult {
@@ -74,7 +104,7 @@ sealed trait XmlResult[+T] {
     case e: XmlError   ⇒ e
   }
 
-  def addErrorPathPrefix(path: XmlPath) = this match {
+  def addErrorPathPrefix(path: ElemPath) = this match {
     case XmlError(e, errorPath) ⇒ XmlError(e, errorPath = path ++ errorPath)
     case s: XmlSuccess[T]       ⇒ s
   }
@@ -91,4 +121,4 @@ sealed trait XmlResult[+T] {
 }
 
 case class XmlSuccess[T](value: T) extends XmlResult[T]
-case class XmlError(error: String, errorPath: XmlPath = XmlPath(List.empty)) extends XmlResult[Nothing]
+case class XmlError(error: String, errorPath: XmlPath = XmlPath.empty) extends XmlResult[Nothing]

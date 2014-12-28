@@ -35,7 +35,7 @@ class UnXmlTest extends WordSpecLike with Matchers with OptionValues with Inside
   }
 
   "UnXml.traversableWithHeaderFromXml" should {
-    "return a header and a traversable of the nodes" ignore {
+    "return a header and a traversable of the nodes" in {
       val xmlSource = Source.fromString(
         """<top>
           | <header>
@@ -50,7 +50,8 @@ class UnXmlTest extends WordSpecLike with Matchers with OptionValues with Inside
         """.stripMargin)
       val (header, traversable) = UnXml.traversableWithHeaderFromXml[String, String](XmlPath \ "top" \ "header", XmlPath \ "top" \ "children" \ "child", xmlSource)
       header shouldBe (XmlSuccess("testHeader"))
-      assert(traversable.map(_.getOrElse("ERROR")).toList === List("One", "Two", "Three"))
+      val children = traversable.map(_.getOrElse("ERROR")).toList
+      assert(children === List("One", "Two", "Three"))
     }
   }
 }

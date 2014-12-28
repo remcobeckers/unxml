@@ -79,8 +79,8 @@ object UnXml {
     val reads = implicitly[XmlReads[T]]
     val traversable = readFromSource(List(headerAt, at))(source)
 
-    val header = headerReads.reads(traversable.head)
-    (header, traversable.map(reads.reads(_)))
+    val (head, tail) = traversable.splitAt(1)
+    (headerReads.reads(head.head), tail.map(reads.reads(_)))
   }
 
   /**
