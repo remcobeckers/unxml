@@ -1,10 +1,13 @@
 package org.rembo.unxml
+package blocking
+
+import XmlBlockingTypes._
 
 trait XmlReaderTupleInstances {
 
   [1..21#
   implicit class XmlReadOps1[[#L1#]](val left: XmlReads[([#L1#])]) {
-    def and[R](right: XmlReads[R]): XmlReads[Tuple2[[#L1#], R]] = XmlReads { node =>
+    def and[R](right: XmlReads[R]): XmlReads[Tuple2[[#L1#], R]] = xmlReads { node =>
       left.reads(node).flatMap { case ([#l1#]) =>
         right.reads(node).map { r =>
           ([#l1#], r)
@@ -15,8 +18,8 @@ trait XmlReaderTupleInstances {
   ]
 
   [#
-  implicit class XmlReadApply1[[#L1#]](val r: XmlReads[([#L1#])]) {
-    def apply[R](create: ([#L1#]) => R): XmlReads[R] = XmlReads { node =>
+  implicit class XmlReadAs1[[#L1#]](val r: XmlReads[([#L1#])]) {
+    def as[R](create: ([#L1#]) => R): XmlReads[R] = xmlReads { node =>
       r.reads(node).map { case ([#l1#]) => create([#l1#]) }
     }
   }#

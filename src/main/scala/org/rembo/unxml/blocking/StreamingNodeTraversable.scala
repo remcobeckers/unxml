@@ -1,7 +1,10 @@
 package org.rembo.unxml
+package blocking
 
-import io.Source
+import scala.io.Source
 import scala.xml._
+
+import XmlBlockingTypes._
 
 /**
  * Convert a scala.io.Source to an Iterator of NodeSeq's from the
@@ -45,11 +48,10 @@ object StreamingNodeTraversable {
           if (targets.tail != Nil) targets = targets.tail
           f(node)
           NodeSeq.Empty
-          //        } else if (targetPath.startsWith(currentPath)) {
-          //          node
+        } else if (targets.head.startsWith(currentPath)) {
+          node
         } else {
-          <dummy/> // All other nodes are not interesting
-          //          node
+          node
         }
       }
     }

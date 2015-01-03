@@ -1,7 +1,10 @@
 package org.rembo.unxml
+package blocking
 
-import io.Source
-import xml.NodeSeq
+import scala.io.Source
+import scala.xml.NodeSeq
+
+import XmlBlockingTypes._
 
 object UnXml {
   import StreamingNodeTraversable._
@@ -13,17 +16,7 @@ object UnXml {
    * @tparam T The type that is read
    * @return An XmlResult containing a value of type T or an error
    */
-  def fromXml[T: XmlReads](node: NodeSeq): XmlResult[T] = fromXml(XmlPath.empty, node)
-
-  /**
-   * Read type T from nodeSeq at the provided path
-   *
-   * @param at The path
-   * @param node The node from whic to read
-   * @tparam T The type that is read
-   * @return An XmlResult containing a value of type T or an error
-   */
-  def fromXml[T: XmlReads](at: XmlPath, node: NodeSeq): XmlResult[T] = implicitly[XmlReads[T]].reads(at(node))
+  def fromXml[T: XmlReads](node: NodeSeq): XmlResult[T] = implicitly[XmlReads[T]].reads(node)
 
   /**
    * Read type T from source at the root path
@@ -31,19 +24,9 @@ object UnXml {
    * @tparam T The type to read
    * @return Success with a value of type T or Failure with an error
    */
-  def fromXml[T: XmlReads](source: Source): XmlResult[T] = fromXml(XmlPath.empty, source)
-
-  /**
-   * Read type T from source at the specified path
-   *
-   * @param at The path
-   * @param source The source, will not be automatically closed
-   * @tparam T The type to read
-   * @return Success with a value of type T or Failure with an error
-   */
-  def fromXml[T: XmlReads](at: XmlPath, source: Source): XmlResult[T] = {
+  def fromXml[T: XmlReads](source: Source): XmlResult[T] = {
     val reads = implicitly[XmlReads[T]]
-    reads.reads(readFromSource(List(at))(source).head)
+    reads.reads(readFromSource(List(XmlPath.empty))(source).head)
   }
 
   /**
@@ -58,7 +41,7 @@ object UnXml {
    */
   def traversableFromXml[T: XmlReads](at: XmlPath, source: Source): TraversableOnce[XmlResult[T]] = {
     val reads = implicitly[XmlReads[T]]
-    readFromSource(List(at))(source).map(reads.reads(_))
+    readFromSource(List(at))(source).map(reads.reads(_).addErrorPathPrefix(at))
   }
 
   /**
@@ -80,7 +63,7 @@ object UnXml {
     val traversable = readFromSource(List(headerAt, at))(source)
 
     val (head, tail) = traversable.splitAt(1)
-    (headerReads.reads(head.head), tail.map(reads.reads(_)))
+    (headerReads.reads(head.head).addErrorPathPrefix(at), tail.map(reads.reads(_).addErrorPathPrefix(at)))
   }
 
   /**

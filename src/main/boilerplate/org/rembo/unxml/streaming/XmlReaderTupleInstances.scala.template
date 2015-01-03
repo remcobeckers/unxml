@@ -1,0 +1,29 @@
+package org.rembo.unxml
+package streaming
+
+import XmlStreamingTypes._
+
+trait XmlReaderTupleInstances {
+
+  implicit class XmlReadOps1[L1](val left: XmlReads[(L1)]) {
+    def and[R](right: XmlReads[R]): XmlReads[(L1, R)] = XmlReads(XmlReads.combine(left, right))
+  }
+
+  [2..21#
+  implicit class XmlReadOps2[[#L1#]](val left: XmlReads[Tuple1[[#L1#]]]) {
+    def and[R](right: XmlReads[R]): XmlReads[Tuple2[[#L1#], R]] = XmlReads {
+      XmlReads.combine(left, right).map(_.map {
+        case (([#l1#]), r) ⇒ ([#l1#], r)
+      })
+    }
+  }#
+  ]
+
+  [#
+  implicit class XmlReadAs1[[#L1#]](val r: XmlReads[([#L1#])]) {
+    def as[R](create: ([#L1#]) => R): XmlReads[R] = XmlReads {
+      r.flow.map(_.map { case ([#l1#]) => create([#l1#]) })
+    }
+  }#
+  ]
+}
