@@ -38,6 +38,13 @@ object XmlBlockingTypes extends XmlBaseTypes {
       if (n.isEmpty) XmlError("Node not found", path)
       r.reads(n).addErrorPathPrefix(path)
     }
+
+    def readOptional[T](implicit reads: XmlReads[T]): XmlReads[Option[T]] =
+      path.read[T].mapResult {
+        case XmlSuccess(r)                                           ⇒ XmlSuccess(Some(r))
+        case XmlError(_, notFoundPath, true) if notFoundPath == path ⇒ XmlSuccess(None)
+        case error: XmlError                                         ⇒ error
+      }
   }
 
   implicit class ElemPathOps(path: ElemPath) {

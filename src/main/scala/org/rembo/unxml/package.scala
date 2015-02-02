@@ -104,6 +104,8 @@ trait XmlBaseTypes {
       case XmlError(_, _, _) ⇒ otherwise
       case XmlSuccess(v)     ⇒ v
     }
+
+    def toOption: Option[T] = map(Some(_)).getOrElse(None)
   }
 
   case class XmlSuccess[T](value: T) extends XmlResult[T]

@@ -64,8 +64,16 @@ object XmlStreamingTypes extends XmlBaseTypes {
     }
 
     def read[T](implicit reads: XmlReads[T]): XmlReads[T] =
-      XmlReads(reads.reads(Flow[XmlEvent].transform(() ⇒ new XmlPathFilter(path)))).mapResult(_.addErrorPathPrefix(path))
+      XmlReads {
+        reads.reads(Flow[XmlEvent].transform(() ⇒ new XmlPathFilter(path))) map (_.addErrorPathPrefix(path))
+      }
 
+    def readOptional[T](implicit reads: XmlReads[T]): XmlReads[Option[T]] =
+      path.read[T].mapResult {
+        case XmlSuccess(r)                                           ⇒ XmlSuccess(Some(r))
+        case XmlError(_, notFoundPath, true) if notFoundPath == path ⇒ XmlSuccess(None)
+        case error: XmlError                                         ⇒ error.addErrorPathPrefix(path)
+      }
   }
 
   implicit class ElemPathOps(path: ElemPath) {

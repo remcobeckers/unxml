@@ -46,9 +46,9 @@ trait AnnouncementXmlReads extends DateTimeXmlReads with DefaultXmlReads {
 
   implicit val optionalAddressReads = (
     (XmlPath \ "adres" \ "postcodeHuisnummer" \ "postcode").read[String] and
-    (XmlPath \ "adres" \ "postcodeHuisnummer" \ "huisnummer").read[Option[String]] and
-    (XmlPath \ "adres" \ "postcodeHuisnummer" \ "huisletter").read[Option[String]]
-  ).as(Address)
+    (XmlPath \ "adres" \ "postcodeHuisnummer" \ "huisnummer").readOptional[String] and
+    (XmlPath \ "adres" \ "postcodeHuisnummer" \ "huisletter").readOptional[String]
+  ).as(Address).mapResult(r ⇒ XmlSuccess(r.toOption))
 
   implicit val announcementReads = (
     (XmlPath \ "owmskern" \ "identifier").read[Id] and
@@ -56,8 +56,8 @@ trait AnnouncementXmlReads extends DateTimeXmlReads with DefaultXmlReads {
     (XmlPath \ "owmsmantel" \ "description").read[String] and
     (XmlPath \ "bekendmakingenmeta").readAll[Set, Option[Address]]("object", 100).map(_.flatten) and
     (XmlPath \ "owmskern" \ "modified").read[DateTime] and
-    (XmlPath \ "owmskern" \ "temporal" \ "start").read[Option[DateTime]] and
-    (XmlPath \ "owmskern" \ "temporal" \ "end").read[Option[DateTime]] and
+    (XmlPath \ "owmskern" \ "temporal" \ "start").readOptional[DateTime] and
+    (XmlPath \ "owmskern" \ "temporal" \ "end").readOptional[DateTime] and
     (XmlPath \ "bekendmakingenmeta" \ "product" \ "producttype").read[String]
   ).as(Announcement)
 }
