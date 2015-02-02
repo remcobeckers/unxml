@@ -6,8 +6,8 @@ import XmlBlockingTypes._
 object DefaultXmlReads extends DefaultXmlReads
 
 trait DefaultXmlReads extends XmlReaderTupleInstances {
-  implicit val stringReads: XmlReads[String] = XmlReads(s ⇒ XmlResult(s))
-  implicit val intReads: XmlReads[Int] = XmlReads(s ⇒ XmlResult(s.toInt))
-  implicit val doubleReads: XmlReads[Double] = XmlReads(s ⇒ XmlResult(s.toDouble))
-  implicit val booleanReads: XmlReads[Boolean] = XmlReads(s ⇒ XmlResult(s.toBoolean))
+  implicit val stringReads: XmlReads[String] = XmlReads(node ⇒ XmlResult(node.text))
+  implicit val intReads: XmlReads[Int] = stringReads.map(_.toInt)
+  implicit val doubleReads: XmlReads[Double] = stringReads.map(_.toDouble)
+  implicit val booleanReads: XmlReads[Boolean] = stringReads.map(_.toBoolean)
 }

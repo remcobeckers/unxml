@@ -8,23 +8,19 @@ import scala.xml.NodeSeq
 
 object XmlBlockingTypes extends XmlBaseTypes {
   object XmlReads {
-    def apply[T](f: String ⇒ XmlResult[T]) = new XmlReads[T]() {
-      def reads(nodeSeq: NodeSeq) = f(nodeSeq.text)
+    def apply[T](f: NodeSeq ⇒ XmlResult[T]) = new XmlReads[T]() {
+      def reads(nodeSeq: NodeSeq) = f(nodeSeq)
     }
-  }
-
-  def xmlReads[T](f: NodeSeq ⇒ XmlResult[T]) = new XmlReads[T]() {
-    def reads(nodeSeq: NodeSeq) = f(nodeSeq)
   }
 
   @implicitNotFound(msg = "An implicit XmlReads for ${T} is required.")
   trait XmlReads[T] {
     def reads(nodeSeq: NodeSeq): XmlResult[T]
 
-    def map[R](f: T ⇒ R): XmlReads[R] = xmlReads { node ⇒ reads(node).map(v ⇒ f(v)) }
-    def flatMap[R](f: T ⇒ XmlReads[R]): XmlReads[R] = xmlReads { node ⇒ reads(node).flatMap(t ⇒ f(t).reads(node)) }
+    def map[R](f: T ⇒ R): XmlReads[R] = XmlReads { node ⇒ reads(node).map(v ⇒ f(v)) }
+    def flatMap[R](f: T ⇒ XmlReads[R]): XmlReads[R] = XmlReads { node ⇒ reads(node).flatMap(t ⇒ f(t).reads(node)) }
 
-    def mapResult[R](f: XmlResult[T] ⇒ XmlResult[R]): XmlReads[R] = xmlReads(node ⇒ f(reads(node)))
+    def mapResult[R](f: XmlResult[T] ⇒ XmlResult[R]): XmlReads[R] = XmlReads(node ⇒ f(reads(node)))
   }
 
   implicit class XmlPathOps(path: XmlPath) {
@@ -33,7 +29,7 @@ object XmlBlockingTypes extends XmlBaseTypes {
       case ElemPath(elems)       ⇒ elems.foldLeft(node) { (nodeSeq, elem) ⇒ nodeSeq \ elem }
     }
 
-    def read[T](implicit r: XmlReads[T]): XmlReads[T] = xmlReads { node ⇒
+    def read[T](implicit r: XmlReads[T]): XmlReads[T] = XmlReads { node ⇒
       val n = apply(node)
       if (n.isEmpty) XmlError("Node not found", path)
       r.reads(n).addErrorPathPrefix(path)
@@ -49,7 +45,7 @@ object XmlBlockingTypes extends XmlBaseTypes {
 
   implicit class ElemPathOps(path: ElemPath) {
     def readAll[F[_], T](child: String, maxSize: Int = Int.MaxValue)(implicit reads: XmlReads[T], bf: generic.CanBuildFrom[F[_], T, F[T]]): XmlReads[F[T]] = {
-      xmlReads[F[T]] { node ⇒
+      XmlReads[F[T]] { node ⇒
         val childPath = path \ child
         val n = childPath(node)
         XmlResult.sequence(n.map(reads.reads(_).addErrorPathPrefix(childPath))).map { values ⇒
