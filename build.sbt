@@ -3,7 +3,7 @@ import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 
 lazy val projectSettings = Seq(
   organization := "org.rembo",
-  scalaVersion := "2.11.4",
+  scalaVersion := "2.11.5",
   version := "0.0.3",
   name := "unxml",
   licenses += ("Apache-2.0", url("http://opensource.org/licenses/apache2.0")),
@@ -22,14 +22,14 @@ lazy val scalaSettings = Seq(
     "-Yrangepos"
   ),
   libraryDependencies ++= {
-    val akkaVersion = "2.3.7"
+    val akkaVersion = "2.3.9"
     Seq(
-      "org.scala-lang.modules" %% "scala-xml" % "1.0.2",
-      "com.fasterxml" % "aalto-xml" % "0.9.9",
-      "com.typesafe.akka" % "akka-stream-experimental_2.11" % "1.0-M2",
-      "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-      "com.typesafe.akka"        %%  "akka-testkit"            % akkaVersion  % "test",
-    "com.github.nscala-time"   %%  "nscala-time"             % "1.6.0" % "test"
+      "org.scala-lang.modules" %% "scala-xml"                     % "1.0.2",
+      "com.fasterxml"           % "aalto-xml"                     % "0.9.9",
+      "com.typesafe.akka"       % "akka-stream-experimental_2.11" % "1.0-M3",
+      "org.scalatest"          %% "scalatest"                     % "2.2.1" % "test",
+      "com.typesafe.akka"      %% "akka-testkit"                  % akkaVersion  % "test",
+    "com.github.nscala-time"   %% "nscala-time"                   % "1.6.0" % "test"
     )
   }
 )

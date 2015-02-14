@@ -2,7 +2,7 @@ package org.rembo.unxml
 package streaming
 
 import akka.actor.ActorSystem
-import akka.stream.FlowMaterializer
+import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit.TestKit
 import akka.util.ByteString
@@ -17,7 +17,7 @@ import DefaultXmlReads._
 
 class XmlReaderTest extends TestKit(ActorSystem()) with WordSpecLike with Matchers with OptionValues with Inside with Inspectors {
 
-  implicit val mat = FlowMaterializer()
+  implicit val mat = ActorFlowMaterializer()
 
   "When parsing a document the streaming parser with XmlReader" should {
     "reads a single string element as expected" in {

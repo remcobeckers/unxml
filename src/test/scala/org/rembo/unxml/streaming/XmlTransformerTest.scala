@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Await
 
 import akka.actor.ActorSystem
-import akka.stream.FlowMaterializer
+import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit.TestKit
 import akka.util.ByteString
@@ -15,7 +15,7 @@ import org.scalatest._
 
 class XmlTransformerTest extends TestKit(ActorSystem()) with WordSpecLike with Matchers with OptionValues with Inside with Inspectors {
   import XmlTransformer._
-  implicit val mat = FlowMaterializer()
+  implicit val mat = ActorFlowMaterializer()
 
   "When parsing a document the streaming parser" should {
     "generate the expected events" in {
