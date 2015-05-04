@@ -12,7 +12,7 @@ class XmlPathFilter(path: XmlPath) extends StatefulStage[XmlEvent, XmlEvent] {
   override def initial = outsideDocument
 
   def outsideDocument = new StageState[XmlEvent, XmlEvent] {
-    override def onPush(elem: XmlEvent, ctx: Context[XmlEvent]): Directive = {
+    override def onPush(elem: XmlEvent, ctx: Context[XmlEvent]): SyncDirective = {
       elem match {
         case StartDocument ⇒
           if (path.isEmpty) become(insidePath(XmlPath.empty)) else become(outsidePath(XmlPath.empty, false))
@@ -23,7 +23,7 @@ class XmlPathFilter(path: XmlPath) extends StatefulStage[XmlEvent, XmlEvent] {
   }
 
   def outsidePath(currentPath: ElemPath, wasInside: Boolean): StageState[XmlEvent, XmlEvent] = new StageState[XmlEvent, XmlEvent] {
-    override def onPush(elem: XmlEvent, ctx: Context[XmlEvent]): Directive = {
+    override def onPush(elem: XmlEvent, ctx: Context[XmlEvent]): SyncDirective = {
       elem match {
         case StartElement(name, _, _, _) ⇒
           val newPath = currentPath \ name
@@ -47,7 +47,7 @@ class XmlPathFilter(path: XmlPath) extends StatefulStage[XmlEvent, XmlEvent] {
   }
 
   def insidePath(currentPath: ElemPath): StageState[XmlEvent, XmlEvent] = new StageState[XmlEvent, XmlEvent] {
-    override def onPush(elem: XmlEvent, ctx: Context[XmlEvent]): Directive = {
+    override def onPush(elem: XmlEvent, ctx: Context[XmlEvent]): SyncDirective = {
       elem match {
         case evt @ StartElement(name, _, _, _) ⇒
           become(insidePath(currentPath \ name))

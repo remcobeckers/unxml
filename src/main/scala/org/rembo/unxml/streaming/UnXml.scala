@@ -15,7 +15,7 @@ object UnXml {
    * @tparam T The type to parse
    * @return A Source of XmlResult[T]
    */
-  def fromXml[T](source: Source[ByteString])(implicit reads: XmlReads[T]): Source[XmlResult[T]] = {
+  def fromXml[T](source: Source[ByteString, Unit])(implicit reads: XmlReads[T]): Source[XmlResult[T], Unit] = {
     val xmlSource = source.transform(() ⇒ new XmlTransformer())
     reads.reads(xmlSource)
   }

@@ -49,7 +49,7 @@ class XmlTransformer extends StatefulStage[ByteString, XmlEvent] {
   private val asyncInputFeeder = asyncXMLStreamReader.getInputFeeder()
 
   override def initial = new StageState[ByteString, XmlEvent] {
-    override def onPush(elem: ByteString, ctx: Context[XmlEvent]): Directive = {
+    override def onPush(elem: ByteString, ctx: Context[XmlEvent]): SyncDirective = {
       try {
         asyncInputFeeder.feedInput(elem.toArray[Byte], 0, elem.length)
         var eventType = asyncXMLStreamReader.next()

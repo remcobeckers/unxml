@@ -6,7 +6,7 @@ import scala.annotation.implicitNotFound
 import scala.collection.generic
 import scala.xml.NodeSeq
 
-object XmlBlockingTypes extends XmlBaseTypes {
+object XmlBlockingTypes extends XmlBaseTypes with DefaultXmlReads {
   object XmlReads {
     def apply[T](f: NodeSeq ⇒ XmlResult[T]) = new XmlReads[T]() {
       def reads(nodeSeq: NodeSeq) = f(nodeSeq)
@@ -45,6 +45,10 @@ object XmlBlockingTypes extends XmlBaseTypes {
 
   implicit class ElemPathOps(path: ElemPath) {
     def readAll[F[_], T](child: String, maxSize: Int = Int.MaxValue)(implicit reads: XmlReads[T], bf: generic.CanBuildFrom[F[_], T, F[T]]): XmlReads[F[T]] = {
+      readAllWith(child, maxSize)(reads)
+    }
+
+    def readAllWith[F[_], T](child: String, maxSize: Int = Int.MaxValue)(reads: XmlReads[T])(implicit bf: generic.CanBuildFrom[F[_], T, F[T]]): XmlReads[F[T]] = {
       XmlReads[F[T]] { node ⇒
         val childPath = path \ child
         val n = childPath(node)

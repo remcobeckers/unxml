@@ -26,7 +26,7 @@ lazy val scalaSettings = Seq(
     Seq(
       "org.scala-lang.modules" %% "scala-xml"                     % "1.0.2",
       "com.fasterxml"           % "aalto-xml"                     % "0.9.9",
-      "com.typesafe.akka"       % "akka-stream-experimental_2.11" % "1.0-M3",
+      "com.typesafe.akka"       % "akka-stream-experimental_2.11" % "1.0-RC2",
       "org.scalatest"          %% "scalatest"                     % "2.2.1" % "test",
       "com.typesafe.akka"      %% "akka-testkit"                  % akkaVersion  % "test",
     "com.github.nscala-time"   %% "nscala-time"                   % "1.6.0" % "test"

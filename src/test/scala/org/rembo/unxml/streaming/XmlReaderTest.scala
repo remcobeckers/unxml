@@ -13,7 +13,6 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 import XmlStreamingTypes._
-import DefaultXmlReads._
 
 class XmlReaderTest extends TestKit(ActorSystem()) with WordSpecLike with Matchers with OptionValues with Inside with Inspectors {
 

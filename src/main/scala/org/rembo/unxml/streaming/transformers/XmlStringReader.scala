@@ -13,7 +13,7 @@ class XmlStringReader extends StatefulStage[XmlEvent, XmlResult[String]] {
   val text = new StringBuilder()
 
   def outside: StageState[XmlEvent, XmlResult[String]] = new StageState[XmlEvent, XmlResult[String]] {
-    override def onPush(elem: XmlEvent, ctx: Context[XmlResult[String]]): Directive = {
+    override def onPush(elem: XmlEvent, ctx: Context[XmlResult[String]]): SyncDirective = {
       elem match {
         case StartDocument ⇒
           text.clear()
@@ -26,7 +26,7 @@ class XmlStringReader extends StatefulStage[XmlEvent, XmlResult[String]] {
   }
 
   def in: StageState[XmlEvent, XmlResult[String]] = new StageState[XmlEvent, XmlResult[String]] {
-    override def onPush(elem: XmlEvent, ctx: Context[XmlResult[String]]): Directive = {
+    override def onPush(elem: XmlEvent, ctx: Context[XmlResult[String]]): SyncDirective = {
       elem match {
         case Characters(value) ⇒
           text ++= value

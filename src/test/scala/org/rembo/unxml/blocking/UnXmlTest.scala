@@ -6,7 +6,6 @@ import org.scalatest._
 import scala.io.Source
 
 import XmlBlockingTypes._
-import DefaultXmlReads._
 
 class UnXmlTest extends WordSpecLike with Matchers with OptionValues with Inside with Inspectors {
 
