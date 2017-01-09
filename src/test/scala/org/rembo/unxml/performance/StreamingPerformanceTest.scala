@@ -18,7 +18,7 @@ import scala.util.Random
 //TODO: Error handling seems incorrect in case of empty set of hobbies for readAll (and errors make stream crash)
 class StreamingPerformanceTest extends TestKit(ActorSystem()) with WordSpecLike with Matchers with OptionValues with Inside with Inspectors {
 
-  val N = 10000
+  val N = 100
 
   implicit val mat = ActorFlowMaterializer()
 
@@ -37,8 +37,8 @@ class StreamingPerformanceTest extends TestKit(ActorSystem()) with WordSpecLike 
     val start = "<root><persons>"
     val end = "</persons></root>"
 
-    val hobbies = Set("Darting", "Drinking", "Bowling", "Cycling", "Hanging out")
-    def randomHobbies = (hobbies.filter(_ ⇒ Random.nextBoolean()) + "Running").map { hobby ⇒
+    val hobbies = Set("Running", "Darting", "Drinking", "Bowling", "Cycling", "Hanging out")
+    def randomHobbies = hobbies.filter(_ ⇒ Random.nextBoolean()).map { hobby ⇒
       s"<hobby>$hobby</hobby>"
     }.mkString("")
 
@@ -47,7 +47,7 @@ class StreamingPerformanceTest extends TestKit(ActorSystem()) with WordSpecLike 
         |     <name>Person $n</name>
         |     <age>${n / 100}</age>
         |     <hobbies>
-        |       $randomHobbies
+//        |       $randomHobbies
         |     </hobbies>
         |   </person>
       """.stripMargin

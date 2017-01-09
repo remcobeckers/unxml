@@ -8,7 +8,7 @@ import scala.collection.generic
 import akka.stream._
 import akka.stream.scaladsl._
 
-import org.rembo.unxml.streaming.transformers.XmlTransformer.EndDocument
+import transformers.XmlTransformer._
 import org.rembo.unxml.streaming.transformers.{ XmlPathFilter, XmlStringReader, XmlTransformer }
 
 object XmlStreamingTypes extends XmlBaseTypes with DefaultXmlReads {
@@ -83,18 +83,23 @@ object XmlStreamingTypes extends XmlBaseTypes with DefaultXmlReads {
       readAllWith(child, maxSize)(reads)
 
     def readAllWith[F[_], T](child: String, maxSize: Int)(reads: XmlReads[T])(implicit bf: generic.CanBuildFrom[F[_], T, F[T]]): XmlReads[F[T]] = {
-      val childReads = (XmlPath \ child).read(reads).mapResult(_.addErrorPathPrefix(path \ child))
+      val childPath = path \ child
+      val childReads = (XmlPath \ child).read[T](reads).mapResult(_.addErrorPathPrefix(childPath))
+
       XmlReads[F[T]] {
         Flow[XmlEvent].transform(() ⇒ new XmlPathFilter(path)).splitWhen {
-          case EndDocument ⇒ true
+          case EndDocument | NoMatch(_) ⇒ true
           case _           ⇒ false
         }.map { childrenStream ⇒
           childrenStream.via(childReads.flow).grouped(maxSize).take(1).map {
-            XmlResult.sequence(_).map { values ⇒
-              val builder = bf()
-              values.foreach(v ⇒ builder += v)
-              builder.result()
-            }
+            case XmlError(_, _, _) :: Nil ⇒
+              XmlSuccess(bf().result())
+            case success ⇒
+              XmlResult.sequence(success).map { values ⇒
+                val builder = bf()
+                values.foreach(v ⇒ builder += v)
+                builder.result()
+              }
           }
         }.flatten(FlattenStrategy.concat)
       }
